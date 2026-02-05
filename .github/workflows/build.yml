@@ -54,11 +54,10 @@ jobs:
         zip ../artifacts/tunnel-windows-amd64.zip tunnel-server-windows-amd64.exe tunnel-client-windows-amd64.exe
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tunnel-binaries
         path: artifacts/*
-        retention-days: 30
     
     - name: Create latest binaries (main branch only)
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
