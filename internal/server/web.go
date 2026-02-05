@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/tunnel/pkg/version"
 )
 
 // WebAPI Web管理接口
@@ -43,6 +44,9 @@ func (w *WebAPI) Start(addr string, port int) error {
 	api.HandleFunc("/download/client/{os}/{arch}", w.handleDownloadClient).Methods("GET")
 	api.HandleFunc("/download/config", w.handleDownloadConfig).Methods("GET")
 	api.HandleFunc("/config/generate", w.handleGenerateConfig).Methods("GET")
+	api.HandleFunc("/version", w.handleGetVersion).Methods("GET")
+	api.HandleFunc("/update/check", w.handleCheckUpdate).Methods("GET")
+	api.HandleFunc("/update/info", w.handleUpdateInfo).Methods("GET")
 
 	// 静态文件
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./web")))
@@ -442,4 +446,132 @@ tunnels:
 	
 	// 写入配置
 	rw.Write([]byte(yamlConfig))
+}
+
+// handleGetVersion 获取版本信息
+func (w *WebAPI) handleGetVersion(rw http.ResponseWriter, r *http.Request) {
+	versionInfo := version.Get()
+	
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(map[string]interface{}{
+		"success": true,
+		"data":    versionInfo,
+	})
+}
+
+// handleCheckUpdate 检查更新
+func (w *WebAPI) handleCheckUpdate(rw http.ResponseWriter, r *http.Request) {
+	repo := "xiaqijun/tunnel" // GitHub仓库
+	
+	release, hasUpdate, err := version.CheckUpdate(repo)
+	if err != nil {
+		rw.Header().Set("Content-Type", "application/json")
+		rw.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(rw).Encode(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	currentVersion := version.Get()
+	
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(map[string]interface{}{
+		"success":         true,
+		"has_update":      hasUpdate,
+		"current_version": currentVersion.Version,
+		"latest_version":  release.TagName,
+		"release_notes":   release.Body,
+		"published_at":    release.PublishedAt,
+	})
+}
+
+// handleUpdateInfo 获取更新信息和下载地址
+func (w *WebAPI) handleUpdateInfo(rw http.ResponseWriter, r *http.Request) {
+	repo := "xiaqijun/tunnel"
+	
+	release, hasUpdate, err := version.CheckUpdate(repo)
+	if err != nil {
+		rw.Header().Set("Content-Type", "application/json")
+		rw.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(rw).Encode(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	currentVersion := version.Get()
+	downloadURL := release.GetDownloadURL("server")
+	
+	// 生成更新命令
+	updateCommands := w.generateUpdateCommands(release.TagName, downloadURL)
+	
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(map[string]interface{}{
+		"success":         true,
+		"has_update":      hasUpdate,
+		"current_version": currentVersion.Version,
+		"latest_version":  release.TagName,
+		"download_url":    downloadURL,
+		"release_notes":   release.Body,
+		"published_at":    release.PublishedAt,
+		"update_commands": updateCommands,
+	})
+}
+
+// generateUpdateCommands 生成更新命令
+func (w *WebAPI) generateUpdateCommands(version, downloadURL string) map[string]interface{} {
+	if downloadURL == "" {
+		return map[string]interface{}{
+			"error": "No download URL available for current platform",
+		}
+	}
+	
+	commands := make(map[string]interface{})
+	
+	// Linux更新命令
+	commands["linux"] = map[string]string{
+		"manual": fmt.Sprintf(`# 停止服务
+sudo systemctl stop tunnel-server
+
+# 下载新版本
+wget %s -O tunnel-%s.tar.gz
+tar -xzf tunnel-%s.tar.gz
+
+# 备份旧版本
+sudo mv /usr/local/bin/tunnel-server /usr/local/bin/tunnel-server.backup
+
+# 安装新版本
+sudo mv tunnel-server /usr/local/bin/
+sudo chmod +x /usr/local/bin/tunnel-server
+
+# 启动服务
+sudo systemctl start tunnel-server
+
+# 验证版本
+tunnel-server -version`, downloadURL, version, version),
+		
+		"script": `curl -fsSL http://YOUR_SERVER:8080/api/update/script/linux | sudo bash`,
+	}
+	
+	// Windows更新命令
+	commands["windows"] = map[string]string{
+		"powershell": fmt.Sprintf(`# 停止服务（如果作为服务运行）
+Stop-Service tunnel-server -ErrorAction SilentlyContinue
+
+# 下载新版本
+Invoke-WebRequest -Uri "%s" -OutFile "tunnel-%s.zip"
+Expand-Archive -Path "tunnel-%s.zip" -DestinationPath "." -Force
+
+# 替换可执行文件
+Move-Item tunnel-server.exe tunnel-server.exe.backup -Force
+Move-Item tunnel-server/tunnel-server.exe . -Force
+
+# 启动服务
+Start-Service tunnel-server -ErrorAction SilentlyContinue`, downloadURL, version, version),
+	}
+	
+	return commands
 }

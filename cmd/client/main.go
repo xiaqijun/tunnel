@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -9,11 +10,27 @@ import (
 	
 	"github.com/tunnel/internal/client"
 	"github.com/tunnel/pkg/config"
+	"github.com/tunnel/pkg/version"
 )
 
 func main() {
 	configPath := flag.String("config", "client-config.yaml", "Path to configuration file")
+	showVersion := flag.Bool("version", false, "Show version information")
 	flag.Parse()
+	
+	// 显示版本信息
+	if *showVersion {
+		v := version.Get()
+		fmt.Println(v.String())
+		if v.BuildDate != "" {
+			fmt.Printf("Build Date: %s\n", v.BuildDate)
+		}
+		if v.GitCommit != "" {
+			fmt.Printf("Git Commit: %s\n", v.GitCommit)
+		}
+		fmt.Printf("Go Version: %s\n", v.GoVersion)
+		return
+	}
 	
 	// 加载配置
 	cfg, err := config.LoadClientConfig(*configPath)
