@@ -57,12 +57,11 @@ docker-compose up -d
 
 | 文档 | 说明 |
 |------|------|
-| [📘 快速开始](QUICKSTART.md) | 5分钟上手指南 |
-| [🚀 部署指南](DEPLOY.md) | 生产环境部署 |
-| [🐳 Docker 指南](DOCKER.md) | 容器化部署 |
+| [� 部署指南](DEPLOY.md) | 生产环境部署（含Docker） |
 | [📊 性能测试](PERFORMANCE.md) | 性能优化和测试 |
 | [🔌 API 文档](API.md) | RESTful API 接口 |
 | [🔄 更新指南](UPDATE.md) | 自动更新使用文档 |
+| [🔒 安全指南](SECURITY.md) | 安全策略和最佳实践 |
 | [🤝 贡献指南](CONTRIBUTING.md) | 如何参与贡献 |
 
 ## 🏗️ 架构设计
@@ -236,7 +235,7 @@ docker run -d \
   tunnel-server
 ```
 
-详见 [Docker 部署指南](DOCKER.md)
+更多 Docker 部署选项详见 [部署指南](DEPLOY.md)
 
 ## 📊 API 接口
 

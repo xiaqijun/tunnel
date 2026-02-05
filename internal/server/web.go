@@ -363,8 +363,8 @@ func (w *WebAPI) handleGenerateConfig(rw http.ResponseWriter, r *http.Request) {
 			"token": w.server.config.Token,
 		},
 		"client": map[string]interface{}{
-			"name":                clientName,
-			"reconnect_interval":  5,
+			"name":               clientName,
+			"reconnect_interval": 5,
 			"heartbeat_interval": 30,
 		},
 		"tunnels": []map[string]interface{}{
@@ -443,7 +443,7 @@ tunnels:
 	// 设置响应头
 	rw.Header().Set("Content-Type", "application/x-yaml")
 	rw.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="client-config.yaml"`))
-	
+
 	// 写入配置
 	rw.Write([]byte(yamlConfig))
 }
@@ -451,7 +451,7 @@ tunnels:
 // handleGetVersion 获取版本信息
 func (w *WebAPI) handleGetVersion(rw http.ResponseWriter, r *http.Request) {
 	versionInfo := version.Get()
-	
+
 	rw.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(map[string]interface{}{
 		"success": true,
@@ -462,7 +462,7 @@ func (w *WebAPI) handleGetVersion(rw http.ResponseWriter, r *http.Request) {
 // handleCheckUpdate 检查更新
 func (w *WebAPI) handleCheckUpdate(rw http.ResponseWriter, r *http.Request) {
 	repo := "xiaqijun/tunnel" // GitHub仓库
-	
+
 	release, hasUpdate, err := version.CheckUpdate(repo)
 	if err != nil {
 		rw.Header().Set("Content-Type", "application/json")
@@ -473,9 +473,9 @@ func (w *WebAPI) handleCheckUpdate(rw http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	
+
 	currentVersion := version.Get()
-	
+
 	rw.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(map[string]interface{}{
 		"success":         true,
@@ -490,7 +490,7 @@ func (w *WebAPI) handleCheckUpdate(rw http.ResponseWriter, r *http.Request) {
 // handleUpdateInfo 获取更新信息和下载地址
 func (w *WebAPI) handleUpdateInfo(rw http.ResponseWriter, r *http.Request) {
 	repo := "xiaqijun/tunnel"
-	
+
 	release, hasUpdate, err := version.CheckUpdate(repo)
 	if err != nil {
 		rw.Header().Set("Content-Type", "application/json")
@@ -501,13 +501,13 @@ func (w *WebAPI) handleUpdateInfo(rw http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	
+
 	currentVersion := version.Get()
 	downloadURL := release.GetDownloadURL("server")
-	
+
 	// 生成更新命令
 	updateCommands := w.generateUpdateCommands(release.TagName, downloadURL)
-	
+
 	rw.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(map[string]interface{}{
 		"success":         true,
@@ -528,9 +528,9 @@ func (w *WebAPI) generateUpdateCommands(version, downloadURL string) map[string]
 			"error": "No download URL available for current platform",
 		}
 	}
-	
+
 	commands := make(map[string]interface{})
-	
+
 	// Linux更新命令
 	commands["linux"] = map[string]string{
 		"manual": fmt.Sprintf(`# 停止服务
@@ -552,10 +552,10 @@ sudo systemctl start tunnel-server
 
 # 验证版本
 tunnel-server -version`, downloadURL, version, version),
-		
+
 		"script": `curl -fsSL http://YOUR_SERVER:8080/api/update/script/linux | sudo bash`,
 	}
-	
+
 	// Windows更新命令
 	commands["windows"] = map[string]string{
 		"powershell": fmt.Sprintf(`# 停止服务（如果作为服务运行）
@@ -572,6 +572,6 @@ Move-Item tunnel-server/tunnel-server.exe . -Force
 # 启动服务
 Start-Service tunnel-server -ErrorAction SilentlyContinue`, downloadURL, version, version),
 	}
-	
+
 	return commands
 }

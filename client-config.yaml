@@ -1,6 +1,6 @@
 server:
-  addr: "localhost:7000"
-  token: "tunnel-secret-token-2026"
+  addr: "47.243.104.165:7000"
+  token: "pkD36N1M0taagPeY5t9EvjESYYQKNxNO"
   
 client:
   name: "client-1"

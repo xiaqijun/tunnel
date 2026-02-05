@@ -20,7 +20,7 @@ echo ""
 
 # 配置
 GITHUB_REPO="xiaqijun/tunnel"
-TAG="v1.0.0"
+TAG="v1.0.2"
 INSTALL_DIR="/opt/tunnel"
 ARCH=$(uname -m)
 
