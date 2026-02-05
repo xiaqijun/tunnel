@@ -24,6 +24,8 @@
 - 🔄 **自动重连** - 客户端断线自动重连，无需人工干预
 - 💓 **心跳保活** - 保持连接活跃，及时发现异常
 - 🎯 **零配置启动** - 一键启动脚本，5分钟即可运行
+- 🔄 **自动更新功能** - 一键检查和更新到最新版本（v1.0.2+）
+- ⚙️ **配置自动生成** - 服务器端自动生成客户端配置文件（v1.0.1+）
 
 ## 🎬 快速演示
 
@@ -60,6 +62,7 @@ docker-compose up -d
 | [🐳 Docker 指南](DOCKER.md) | 容器化部署 |
 | [📊 性能测试](PERFORMANCE.md) | 性能优化和测试 |
 | [🔌 API 文档](API.md) | RESTful API 接口 |
+| [🔄 更新指南](UPDATE.md) | 自动更新使用文档 |
 | [🤝 贡献指南](CONTRIBUTING.md) | 如何参与贡献 |
 
 ## 🏗️ 架构设计
@@ -324,7 +327,52 @@ go run ./cmd/client -config client-config.yaml
 
 查看 [CHANGELOG.md](CHANGELOG.md) 了解版本历史
 
-## 🛣️ 路线图
+## � 版本更新
+
+### 查看当前版本
+```bash
+./tunnel-server -version
+./tunnel-client -version
+```
+
+### 检查更新
+```bash
+# 通过API检查
+curl http://YOUR_SERVER:8080/api/update/check
+
+# 通过API获取更新详情
+curl http://YOUR_SERVER:8080/api/update/info
+```
+
+### 自动更新（推荐）
+
+**Linux 服务器:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/xiaqijun/tunnel/main/scripts/update-server.sh | sudo bash
+```
+
+**Linux 客户端:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/xiaqijun/tunnel/main/scripts/update-client.sh | bash
+```
+
+**Windows 服务器:**
+```powershell
+irm https://raw.githubusercontent.com/xiaqijun/tunnel/main/scripts/update-server.ps1 | iex
+```
+
+详细更新文档请查看 [UPDATE.md](UPDATE.md)
+
+## �🛣️ 路线图
+
+### v1.0.2 (已发布) ✅
+- [x] 🔄 自动更新功能
+- [x] 📝 版本管理系统
+- [x] 🔌 更新检查API
+
+### v1.0.1 (已发布) ✅
+- [x] ⚙️ 配置自动生成
+- [x] 📥 配置下载API
 
 ### v1.1.0 (计划中)
 - [ ] UDP 协议支持
