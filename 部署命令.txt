@@ -1,0 +1,97 @@
+================================================
+  Tunnel 服务器部署 - 完整命令
+  服务器: 47.243.104.165
+================================================
+
+方法 1: 一条命令完成（最简单）⭐
+================================================
+
+复制以下命令，SSH 连接到服务器后粘贴执行：
+
+bash <(wget -qO- https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-to-server.sh)
+
+或者使用 curl：
+
+bash <(curl -fsSL https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-to-server.sh)
+
+
+方法 2: SSH 一键执行（超级简单）⭐⭐⭐
+================================================
+
+在 Windows PowerShell 中执行（自动连接并部署）：
+
+ssh root@47.243.104.165 "bash <(wget -qO- https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-to-server.sh)"
+
+
+================================================
+  脚本功能
+================================================
+
+✅ 自动检测 GitHub Actions 构建状态
+✅ 等待构建完成（如果正在构建，最多等待5分钟）
+✅ 下载预编译的二进制文件
+✅ 安装到 /opt/tunnel
+✅ 生成随机安全 Token
+✅ 配置防火墙（开放 7000 和 8080）
+✅ 安装并启动 systemd 服务
+✅ 设置开机自启动
+✅ 显示 Token 和访问信息
+
+================================================
+  预计时间
+================================================
+
+- GitHub 构建已完成: 30 秒
+- GitHub 正在构建: 2-5 分钟（自动等待）
+
+================================================
+  部署后访问
+================================================
+
+Web 管理界面:
+http://47.243.104.165:8080
+
+Token 位置:
+/opt/tunnel/.token
+
+================================================
+  服务管理命令
+================================================
+
+查看状态: systemctl status tunnel-server
+查看日志: journalctl -u tunnel-server -f
+重启服务: systemctl restart tunnel-server
+停止服务: systemctl stop tunnel-server
+
+================================================
+  客户端连接
+================================================
+
+1. 下载客户端:
+   https://github.com/xiaqijun/tunnel/releases/tag/v1.0.0
+   
+2. 配置 client-config.yaml:
+   server:
+     addr: "47.243.104.165:7000"
+     token: "从服务器获取的Token"
+   
+   client:
+     name: "my-pc"
+   
+   tunnels:
+     - name: "local-web"
+       local_addr: "127.0.0.1"
+       local_port: 8080
+       remote_port: 8000
+
+3. 运行客户端:
+   bin\tunnel-client.exe -config client-config.yaml
+
+4. 访问:
+   http://47.243.104.165:8000
+
+================================================
+  准备部署了吗？
+================================================
+
+复制上面的命令，开始部署吧！ 🚀

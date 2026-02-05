@@ -258,7 +258,7 @@ func (w *WebAPI) handleGetInstallCommand(rw http.ResponseWriter, r *http.Request
 	}
 
 	// 获取服务器地址（用于客户端配置）
-	serverAddr := w.server.config.Server.BindAddr
+	serverAddr := w.server.config.BindAddr
 	if serverAddr == "0.0.0.0" || serverAddr == "" {
 		// 尝试从请求中获取真实IP
 		serverAddr = r.Header.Get("X-Real-IP")
@@ -278,7 +278,7 @@ func (w *WebAPI) handleGetInstallCommand(rw http.ResponseWriter, r *http.Request
 			}
 		}
 	}
-	serverPort := w.server.config.Server.BindPort
+	serverPort := w.server.config.BindPort
 
 	installCommands := map[string]interface{}{
 		"windows": map[string]string{
@@ -332,7 +332,7 @@ func (w *WebAPI) handleGenerateConfig(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取服务器地址
-	serverAddr := w.server.config.Server.BindAddr
+	serverAddr := w.server.config.BindAddr
 	if serverAddr == "0.0.0.0" || serverAddr == "" {
 		// 尝试从请求中获取真实IP
 		serverAddr = r.Header.Get("X-Real-IP")
@@ -350,13 +350,13 @@ func (w *WebAPI) handleGenerateConfig(rw http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	serverPort := w.server.config.Server.BindPort
+	serverPort := w.server.config.BindPort
 
 	// 生成配置
 	config := map[string]interface{}{
 		"server": map[string]interface{}{
 			"addr":  fmt.Sprintf("%s:%d", serverAddr, serverPort),
-			"token": w.server.config.Auth.Token,
+			"token": w.server.config.Token,
 		},
 		"client": map[string]interface{}{
 			"name":                clientName,
@@ -389,7 +389,7 @@ func (w *WebAPI) handleDownloadConfig(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取服务器地址
-	serverAddr := w.server.config.Server.BindAddr
+	serverAddr := w.server.config.BindAddr
 	if serverAddr == "0.0.0.0" || serverAddr == "" {
 		// 尝试从请求中获取真实IP
 		serverAddr = r.Header.Get("X-Real-IP")
@@ -400,14 +400,14 @@ func (w *WebAPI) handleDownloadConfig(rw http.ResponseWriter, r *http.Request) {
 			serverAddr = r.Host
 			// 移除端口号
 			for i := len(serverAddr) - 1; i >= 0; i-- {
-			if serverAddr[i] == ':' {
+				if serverAddr[i] == ':' {
 					serverAddr = serverAddr[:i]
 					break
 				}
 			}
 		}
 	}
-	serverPort := w.server.config.Server.BindPort
+	serverPort := w.server.config.BindPort
 
 	// 生成YAML配置
 	yamlConfig := fmt.Sprintf(`# Tunnel 客户端配置
@@ -434,7 +434,7 @@ tunnels:
   #   local_port: 22
   #   remote_port: 2222
 `,
-		serverAddr, serverPort, w.server.config.Auth.Token, clientName)
+		serverAddr, serverPort, w.server.config.Token, clientName)
 
 	// 设置响应头
 	rw.Header().Set("Content-Type", "application/x-yaml")
