@@ -1,5 +1,71 @@
 # 部署指南
 
+## 🚀 快速部署（推荐）
+
+### Linux 服务器一键安装
+
+使用自动部署脚本，从 GitHub Release 自动获取最新版本：
+
+```bash
+# 自动获取最新版本并安装
+bash <(curl -fsSL https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-to-server.sh)
+
+# 或使用 wget
+bash <(wget -qO- https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-to-server.sh)
+```
+
+**脚本会自动完成：**
+- ✅ 从 GitHub Release 获取最新版本
+- ✅ 检测系统架构（amd64/arm64）
+- ✅ 下载对应平台的预编译二进制文件
+- ✅ 安装到 /opt/tunnel
+- ✅ 配置防火墙（UFW/firewalld/iptables）
+- ✅ 创建 systemd 服务
+- ✅ 生成随机安全 Token
+- ✅ 启动服务并设置开机自启
+
+部署完成后会显示 Token 和访问地址，**请务必记录 Token**！
+
+---
+
+## 📦 手动部署
+
+### 方式一：从 GitHub Release 下载
+
+适合生产环境，无需编译：
+
+```bash
+# 1. 下载最新版本（自动检测架构）
+LATEST_VERSION=$(curl -s https://api.github.com/repos/xiaqijun/tunnel/releases/latest | grep tag_name | cut -d '"' -f 4)
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; elif [ "$ARCH" = "aarch64" ]; then ARCH="arm64"; fi
+wget https://github.com/xiaqijun/tunnel/releases/download/$LATEST_VERSION/tunnel-$LATEST_VERSION-linux-$ARCH.tar.gz
+
+# 2. 解压
+tar -xzf tunnel-$LATEST_VERSION-linux-$ARCH.tar.gz
+
+# 3. 移动到系统目录
+sudo mv tunnel-server-linux-$ARCH /usr/local/bin/tunnel-server
+sudo mv tunnel-client-linux-$ARCH /usr/local/bin/tunnel-client
+sudo chmod +x /usr/local/bin/tunnel-server
+sudo chmod +x /usr/local/bin/tunnel-client
+
+# 4. 创建配置目录
+sudo mkdir -p /opt/tunnel
+cd /opt/tunnel
+
+# 5. 下载配置文件
+sudo wget https://raw.githubusercontent.com/xiaqijun/tunnel/main/config.yaml
+sudo wget https://raw.githubusercontent.com/xiaqijun/tunnel/main/client-config.yaml
+
+# 6. 修改配置（重要！）
+sudo nano config.yaml  # 修改 auth.token 为强密码
+```
+
+### 方式二：从源码编译
+
+适合开发环境或需要自定义编译：
+
 ## 服务器部署
 
 ### 1. 编译程序

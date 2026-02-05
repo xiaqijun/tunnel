@@ -1,6 +1,6 @@
 #!/bin/bash
-# Tunnel 自动部署到服务器 47.243.104.165
-# 智能检测构建状态，自动下载并安装
+# Tunnel 自动部署脚本
+# 自动获取最新版本并安装
 
 set -e
 
@@ -14,15 +14,25 @@ NC='\033[0m'
 clear
 echo -e "${BLUE}================================${NC}"
 echo -e "${BLUE}  Tunnel 一键部署脚本${NC}"
-echo -e "${BLUE}  服务器: 47.243.104.165${NC}"
 echo -e "${BLUE}================================${NC}"
 echo ""
 
 # 配置
 GITHUB_REPO="xiaqijun/tunnel"
-TAG="v1.0.2"
 INSTALL_DIR="/opt/tunnel"
 ARCH=$(uname -m)
+
+# 获取最新版本
+echo -e "${YELLOW}🔍 获取最新版本信息...${NC}"
+LATEST_RELEASE=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases/latest")
+TAG=$(echo "$LATEST_RELEASE" | grep -oP '"tag_name": "\K[^"]+' || echo "")
+
+if [ -z "$TAG" ]; then
+    echo -e "${RED}❌ 无法获取最新版本，使用默认版本 v1.0.2${NC}"
+    TAG="v1.0.2"
+else
+    echo -e "${GREEN}✓ 最新版本: $TAG${NC}"
+fi
 
 # 检测架构
 if [ "$ARCH" == "x86_64" ]; then
@@ -274,14 +284,20 @@ else
     TOKEN="请查看配置文件"
 fi
 
+# 获取服务器公网IP
+SERVER_IP=$(curl -s https://api.ipify.org || curl -s https://ifconfig.me || echo "YOUR-SERVER-IP")
+
 # 完成信息
 echo ""
 echo -e "${BLUE}================================${NC}"
 echo -e "${GREEN}  🎉 部署完成！${NC}"
 echo -e "${BLUE}================================${NC}"
 echo ""
+echo -e "${YELLOW}版本信息：${NC}"
+echo "  安装版本: $TAG"
+echo ""
 echo -e "${YELLOW}服务器信息：${NC}"
-echo "  IP 地址: 47.243.104.165"
+echo "  IP 地址: $SERVER_IP"
 echo "  隧道端口: 7000"
 echo "  Web 管理: 8080"
 echo ""
@@ -289,7 +305,7 @@ echo -e "${YELLOW}认证信息：${NC}"
 echo -e "  Token: ${GREEN}$TOKEN${NC}"
 echo ""
 echo -e "${YELLOW}访问地址：${NC}"
-echo "  Web 管理: http://47.243.104.165:8080"
+echo "  Web 管理: http://$SERVER_IP:8080"
 echo ""
 echo -e "${YELLOW}服务管理命令：${NC}"
 echo "  查看状态: systemctl status tunnel-server"
@@ -300,7 +316,7 @@ echo ""
 echo -e "${YELLOW}客户端配置示例：${NC}"
 echo "---"
 echo "server:"
-echo "  addr: \"47.243.104.165:7000\""
+echo "  addr: \"$SERVER_IP:7000\""
 echo "  token: \"$TOKEN\""
 echo ""
 echo "client:"

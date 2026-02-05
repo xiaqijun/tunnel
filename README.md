@@ -63,7 +63,26 @@ docker-compose up -d
 | [🔄 更新指南](UPDATE.md) | 自动更新使用文档 |
 | [🔒 安全指南](SECURITY.md) | 安全策略和最佳实践 |
 | [🤝 贡献指南](CONTRIBUTING.md) | 如何参与贡献 |
+## 🚀 Linux 服务器快速安装
 
+一条命令完成服务器部署（自动从 GitHub Release 获取最新版本）：
+
+```bash
+# 自动获取最新版本并安装
+bash <(curl -fsSL https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-to-server.sh)
+```
+
+**自动完成：**
+- ✅ 从 GitHub Release 下载最新预编译版本
+- ✅ 安装到 /opt/tunnel
+- ✅ 配置防火墙
+- ✅ 创建 systemd 服务
+- ✅ 生成随机安全 Token
+- ✅ 启动服务
+
+📝 更多部署方式请查看 [部署指南](DEPLOY.md)
+
+---
 ## 🏗️ 架构设计
 
 ### 服务器端
