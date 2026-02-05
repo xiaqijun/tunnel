@@ -8,7 +8,34 @@
 - 至少 512MB 内存
 - 开放端口：7000（隧道）、8080（Web管理）
 
-## 🚀 快速部署（推荐）
+## 🚀 方式一：一键自动部署（最快，推荐）
+
+在服务器上执行一条命令即可完成所有配置：
+
+```bash
+# 下载并执行一键部署脚本
+bash <(curl -fsSL https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-to-server.sh)
+
+# 或使用 wget
+bash <(wget -qO- https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-to-server.sh)
+```
+
+**自动完成：**
+- ✅ 下载预编译的二进制文件
+- ✅ 安装到 /opt/tunnel
+- ✅ 配置防火墙（UFW/firewalld/iptables）
+- ✅ 创建 systemd 服务
+- ✅ 生成随机安全 Token
+- ✅ 启动服务
+- ✅ 显示访问信息和 Token
+
+部署完成后会显示 Token 和访问地址，**请务必记录 Token**！
+
+---
+
+## 📦 方式二：从源码编译部署
+
+适合需要自定义编译或开发环境。
 
 ### 步骤 1：上传项目到服务器
 
@@ -66,16 +93,50 @@ performance:
 
 ### 步骤 4：配置防火墙
 
+根据您的防火墙类型执行相应命令：
+
 ```bash
-# 自动配置防火墙
-sudo bash deploy/firewall-setup.sh
+# Ubuntu/Debian (UFW)
+sudo ufw allow 7000/tcp
+sudo ufw allow 8080/tcp
+
+# CentOS/RHEL (firewalld)
+sudo firewall-cmd --permanent --add-port=7000/tcp
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
+
+# 或使用 iptables
+sudo iptables -A INPUT -p tcp --dport 7000 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
 ```
 
-### 步骤 5：安装为系统服务（推荐）
+### 步骤 5：创建并启动 systemd 服务
+
+创建服务文件：
 
 ```bash
-# 安装 systemd 服务
-sudo bash deploy/install-service.sh
+sudo tee /etc/systemd/system/tunnel-server.service > /dev/null << 'EOF'
+[Unit]
+Description=Tunnel Server - High Performance NAT Traversal Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/tunnel
+ExecStart=/opt/tunnel/bin/tunnel-server -config /opt/tunnel/config.yaml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 设置权限
+sudo chmod 644 /etc/systemd/system/tunnel-server.service
+
+# 重载 systemd
+sudo systemctl daemon-reload
 
 # 启动服务
 sudo systemctl start tunnel-server
@@ -256,6 +317,23 @@ sudo iptables -L -n | grep 8080
 
 ## 📝 更新部署
 
+### 使用自动更新脚本（推荐）
+
+```bash
+# 一键更新到最新版本
+curl -fsSL https://raw.githubusercontent.com/xiaqijun/tunnel/main/scripts/update-server.sh | sudo bash
+```
+
+自动完成：
+- ✅ 检测最新版本
+- ✅ 下载对应架构的二进制文件
+- ✅ 备份旧版本
+- ✅ 停止服务
+- ✅ 更新程序
+- ✅ 重启服务
+
+### 手动更新（从源码）
+
 ```bash
 # 停止服务
 sudo systemctl stop tunnel-server
@@ -266,10 +344,11 @@ git pull  # 或重新上传
 # 重新编译
 bash deploy/linux-deploy.sh
 
-# 重新安装服务
-sudo bash deploy/install-service.sh
+# 复制二进制文件（如果使用了 /opt/tunnel）
+sudo cp bin/tunnel-server /opt/tunnel/bin/
+sudo chmod +x /opt/tunnel/bin/tunnel-server
 
-# 启动服务
+# 重启服务
 sudo systemctl start tunnel-server
 ```
 
