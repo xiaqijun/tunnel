@@ -1,0 +1,27 @@
+[Unit]
+Description=Tunnel Server - High Performance NAT Traversal Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/tunnel
+ExecStart=/opt/tunnel/bin/tunnel-server -config /opt/tunnel/config.yaml
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tunnel-server
+
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+
+# 资源限制
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

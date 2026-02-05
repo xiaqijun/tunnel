@@ -1,0 +1,27 @@
+# 构建阶段
+FROM golang:1.21-alpine AS builder
+
+RUN apk add --no-cache git make
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# 编译客户端
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-s -w" -o tunnel-client ./cmd/client
+
+# 运行阶段
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+
+COPY --from=builder /app/tunnel-client .
+COPY client-config.yaml ./client-config.yaml
+
+# 运行客户端
+CMD ["./tunnel-client", "-config", "client-config.yaml"]

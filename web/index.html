@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内网穿透服务器 - 管理界面</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 内网穿透服务器管理</h1>
+            <div class="status-indicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">连接中...</span>
+            </div>
+        </header>
+
+        <!-- 统计概览 -->
+        <section class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <div class="stat-label">在线客户端</div>
+                    <div class="stat-value" id="totalClients">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔗</div>
+                <div class="stat-content">
+                    <div class="stat-label">活动连接</div>
+                    <div class="stat-value" id="activeConnections">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📤</div>
+                <div class="stat-content">
+                    <div class="stat-label">发送流量</div>
+                    <div class="stat-value" id="bytesSent">0 B</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📥</div>
+                <div class="stat-content">
+                    <div class="stat-label">接收流量</div>
+                    <div class="stat-value" id="bytesReceived">0 B</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 快速安装 -->
+        <section class="install-section">
+            <h2>📦 快速安装客户端</h2>
+            <div class="install-container">
+                <div class="install-tabs">
+                    <button class="install-tab active" data-os="windows">Windows</button>
+                    <button class="install-tab" data-os="linux">Linux</button>
+                    <button class="install-tab" data-os="darwin">macOS</button>
+                </div>
+                
+                <div class="install-content">
+                    <div class="install-panel active" data-panel="windows">
+                        <div class="install-method">
+                            <label>PowerShell (推荐)</label>
+                            <div class="command-box">
+                                <code id="cmd-windows-powershell">加载中...</code>
+                                <button class="copy-btn" onclick="copyCommand('cmd-windows-powershell')">
+                                    📋 复制
+                                </button>
+                            </div>
+                        </div>
+                        <div class="install-method">
+                            <label>CMD</label>
+                            <div class="command-box">
+                                <code id="cmd-windows-cmd">加载中...</code>
+                                <button class="copy-btn" onclick="copyCommand('cmd-windows-cmd')">
+                                    📋 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="install-panel" data-panel="linux">
+                        <div class="install-method">
+                            <label>Bash (推荐)</label>
+                            <div class="command-box">
+                                <code id="cmd-linux-bash">加载中...</code>
+                                <button class="copy-btn" onclick="copyCommand('cmd-linux-bash')">
+                                    📋 复制
+                                </button>
+                            </div>
+                        </div>
+                        <div class="install-method">
+                            <label>Wget</label>
+                            <div class="command-box">
+                                <code id="cmd-linux-wget">加载中...</code>
+                                <button class="copy-btn" onclick="copyCommand('cmd-linux-wget')">
+                                    📋 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="install-panel" data-panel="darwin">
+                        <div class="install-method">
+                            <label>Bash</label>
+                            <div class="command-box">
+                                <code id="cmd-darwin-bash">加载中...</code>
+                                <button class="copy-btn" onclick="copyCommand('cmd-darwin-bash')">
+                                    📋 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="install-note">
+                        <strong>注意：</strong>运行命令前，请确保已创建 <code>client-config.yaml</code> 配置文件
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 客户端列表 -->
+        <section class="clients-section">
+            <h2>客户端列表</h2>
+            <div id="clientsContainer" class="clients-container">
+                <!-- 客户端卡片将动态插入这里 -->
+            </div>
+            <div id="noClients" class="no-data">暂无客户端连接</div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

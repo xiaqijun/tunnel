@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Build binaries
+      run: |
+        # Server
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/tunnel-server-linux-amd64 ./cmd/server
+        GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o bin/tunnel-server-linux-arm64 ./cmd/server
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o bin/tunnel-server-windows-amd64.exe ./cmd/server
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o bin/tunnel-server-darwin-amd64 ./cmd/server
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o bin/tunnel-server-darwin-arm64 ./cmd/server
+        
+        # Client
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/tunnel-client-linux-amd64 ./cmd/client
+        GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o bin/tunnel-client-linux-arm64 ./cmd/client
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o bin/tunnel-client-windows-amd64.exe ./cmd/client
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o bin/tunnel-client-darwin-amd64 ./cmd/client
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o bin/tunnel-client-darwin-arm64 ./cmd/client
+    
+    - name: Package binaries
+      run: |
+        cd bin
+        tar czf tunnel-server-linux-amd64.tar.gz tunnel-server-linux-amd64
+        tar czf tunnel-server-linux-arm64.tar.gz tunnel-server-linux-arm64
+        zip tunnel-server-windows-amd64.zip tunnel-server-windows-amd64.exe
+        tar czf tunnel-server-darwin-amd64.tar.gz tunnel-server-darwin-amd64
+        tar czf tunnel-server-darwin-arm64.tar.gz tunnel-server-darwin-arm64
+        
+        tar czf tunnel-client-linux-amd64.tar.gz tunnel-client-linux-amd64
+        tar czf tunnel-client-linux-arm64.tar.gz tunnel-client-linux-arm64
+        zip tunnel-client-windows-amd64.zip tunnel-client-windows-amd64.exe
+        tar czf tunnel-client-darwin-amd64.tar.gz tunnel-client-darwin-amd64
+        tar czf tunnel-client-darwin-arm64.tar.gz tunnel-client-darwin-arm64
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          bin/*.tar.gz
+          bin/*.zip
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

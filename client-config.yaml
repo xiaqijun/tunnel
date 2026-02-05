@@ -1,0 +1,19 @@
+server:
+  addr: "localhost:7000"
+  token: "tunnel-secret-token-2026"
+  
+client:
+  name: "client-1"
+  reconnect_interval: 5
+  heartbeat_interval: 30
+  
+tunnels:
+  - name: "web-service"
+    local_addr: "127.0.0.1"
+    local_port: 8080
+    remote_port: 8000
+    
+  - name: "ssh-service"
+    local_addr: "127.0.0.1"
+    local_port: 22
+    remote_port: 2222

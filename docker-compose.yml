@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # 隧道服务器
+  tunnel-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tunnel-server
+    ports:
+      - "7000:7000"  # 客户端连接端口
+      - "8080:8080"  # Web 管理界面
+      - "8000-8010:8000-8010"  # 隧道端口范围
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./web:/app/web
+    restart: unless-stopped
+    networks:
+      - tunnel-network
+    environment:
+      - TZ=Asia/Shanghai
+
+  # 隧道客户端 (可选，用于测试)
+  tunnel-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: tunnel-client
+    volumes:
+      - ./client-config.yaml:/app/client-config.yaml
+    restart: unless-stopped
+    networks:
+      - tunnel-network
+    depends_on:
+      - tunnel-server
+    environment:
+      - TZ=Asia/Shanghai
+
+  # 示例 Web 服务 (用于测试隧道)
+  demo-web:
+    image: nginx:alpine
+    container_name: demo-web
+    ports:
+      - "8081:80"
+    volumes:
+      - ./demo-html:/usr/share/nginx/html
+    networks:
+      - tunnel-network
+
+networks:
+  tunnel-network:
+    driver: bridge
