@@ -64,21 +64,5 @@ jobs:
         cp tunnel-server-linux-amd64 tunnel-server-latest-linux-amd64
         cp tunnel-client-linux-amd64 tunnel-client-latest-linux-amd64
     
-    - name: Upload to latest release
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: latest
-        name: Latest Build
-        body: |
-          自动构建的最新版本
-          
-          **注意**: 这是开发版本，可能不稳定。生产环境请使用正式发布版本。
-          
-          构建时间: ${{ github.event.head_commit.timestamp }}
-          提交: ${{ github.sha }}
-        files: artifacts/*
-        draft: false
-        prerelease: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # 注意：latest release 需要手动创建 tag 后才能使用
+    # 或者使用 ncipollo/release-action 来自动创建/更新 latest tag

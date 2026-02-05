@@ -39,25 +39,28 @@ jobs:
     
     - name: Package binaries
       run: |
+        mkdir -p release
         cd bin
-        tar czf tunnel-server-linux-amd64.tar.gz tunnel-server-linux-amd64
-        tar czf tunnel-server-linux-arm64.tar.gz tunnel-server-linux-arm64
-        zip tunnel-server-windows-amd64.zip tunnel-server-windows-amd64.exe
-        tar czf tunnel-server-darwin-amd64.tar.gz tunnel-server-darwin-amd64
-        tar czf tunnel-server-darwin-arm64.tar.gz tunnel-server-darwin-arm64
         
-        tar czf tunnel-client-linux-amd64.tar.gz tunnel-client-linux-amd64
-        tar czf tunnel-client-linux-arm64.tar.gz tunnel-client-linux-arm64
-        zip tunnel-client-windows-amd64.zip tunnel-client-windows-amd64.exe
-        tar czf tunnel-client-darwin-amd64.tar.gz tunnel-client-darwin-amd64
-        tar czf tunnel-client-darwin-arm64.tar.gz tunnel-client-darwin-arm64
+        # Linux AMD64 - 服务器和客户端打包在一起
+        tar czf ../release/tunnel-linux-amd64.tar.gz tunnel-server-linux-amd64 tunnel-client-linux-amd64
+        
+        # Linux ARM64
+        tar czf ../release/tunnel-linux-arm64.tar.gz tunnel-server-linux-arm64 tunnel-client-linux-arm64
+        
+        # Windows
+        zip ../release/tunnel-windows-amd64.zip tunnel-server-windows-amd64.exe tunnel-client-windows-amd64.exe
+        
+        # macOS AMD64
+        tar czf ../release/tunnel-darwin-amd64.tar.gz tunnel-server-darwin-amd64 tunnel-client-darwin-amd64
+        
+        # macOS ARM64
+        tar czf ../release/tunnel-darwin-arm64.tar.gz tunnel-server-darwin-arm64 tunnel-client-darwin-arm64
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        files: |
-          bin/*.tar.gz
-          bin/*.zip
+        files: release/*
         draft: false
         prerelease: false
         generate_release_notes: true
