@@ -41,6 +41,8 @@ func (w *WebAPI) Start(addr string, port int) error {
 	api.HandleFunc("/ws", w.handleWebSocket).Methods("GET")
 	api.HandleFunc("/install", w.handleGetInstallCommand).Methods("GET")
 	api.HandleFunc("/download/client/{os}/{arch}", w.handleDownloadClient).Methods("GET")
+	api.HandleFunc("/download/config", w.handleDownloadConfig).Methods("GET")
+	api.HandleFunc("/config/generate", w.handleGenerateConfig).Methods("GET")
 
 	// 静态文件
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./web")))
@@ -255,31 +257,44 @@ func (w *WebAPI) handleGetInstallCommand(rw http.ResponseWriter, r *http.Request
 		host = "localhost:8080"
 	}
 
+	// 获取服务器地址（用于客户端配置）
+	serverAddr := w.server.config.Server.BindAddr
+	if serverAddr == "0.0.0.0" || serverAddr == "" {
+		// 尝试从请求中获取真实IP
+		serverAddr = r.Header.Get("X-Real-IP")
+		if serverAddr == "" {
+			serverAddr = r.Header.Get("X-Forwarded-For")
+		}
+		if serverAddr == "" {
+			serverAddr = r.Host
+			// 移除端口号，只保留IP
+			if idx := len(serverAddr) - 1; serverAddr[idx] == ':' {
+				for i := idx - 1; i >= 0; i-- {
+					if serverAddr[i] == ':' {
+						serverAddr = serverAddr[:i]
+						break
+					}
+				}
+			}
+		}
+	}
+	serverPort := w.server.config.Server.BindPort
+
 	installCommands := map[string]interface{}{
 		"windows": map[string]string{
-			"powershell": fmt.Sprintf(`irm http://%s/api/download/client/windows/amd64 -OutFile tunnel-client.exe; .\tunnel-client.exe -config client-config.yaml`, host),
-			"cmd":        fmt.Sprintf(`curl -o tunnel-client.exe http://%s/api/download/client/windows/amd64 && tunnel-client.exe -config client-config.yaml`, host),
+			"powershell": fmt.Sprintf(`irm http://%s/api/download/config?name=my-pc -OutFile client-config.yaml; irm http://%s/api/download/client/windows/amd64 -OutFile tunnel-client.exe; .\tunnel-client.exe -config client-config.yaml`, host, host),
+			"cmd":        fmt.Sprintf(`curl -o client-config.yaml "http://%s/api/download/config?name=my-pc" && curl -o tunnel-client.exe http://%s/api/download/client/windows/amd64 && tunnel-client.exe -config client-config.yaml`, host, host),
 		},
 		"linux": map[string]string{
-			"bash": fmt.Sprintf(`curl -fsSL http://%s/api/download/client/linux/amd64 -o tunnel-client && chmod +x tunnel-client && ./tunnel-client -config client-config.yaml`, host),
-			"wget": fmt.Sprintf(`wget http://%s/api/download/client/linux/amd64 -O tunnel-client && chmod +x tunnel-client && ./tunnel-client -config client-config.yaml`, host),
+			"bash": fmt.Sprintf(`curl -fsSL "http://%s/api/download/config?name=my-linux" -o client-config.yaml && curl -fsSL http://%s/api/download/client/linux/amd64 -o tunnel-client && chmod +x tunnel-client && ./tunnel-client -config client-config.yaml`, host, host),
+			"wget": fmt.Sprintf(`wget "http://%s/api/download/config?name=my-linux" -O client-config.yaml && wget http://%s/api/download/client/linux/amd64 -O tunnel-client && chmod +x tunnel-client && ./tunnel-client -config client-config.yaml`, host, host),
 		},
 		"darwin": map[string]string{
-			"bash": fmt.Sprintf(`curl -fsSL http://%s/api/download/client/darwin/amd64 -o tunnel-client && chmod +x tunnel-client && ./tunnel-client -config client-config.yaml`, host),
+			"bash": fmt.Sprintf(`curl -fsSL "http://%s/api/download/config?name=my-mac" -o client-config.yaml && curl -fsSL http://%s/api/download/client/darwin/amd64 -o tunnel-client && chmod +x tunnel-client && ./tunnel-client -config client-config.yaml`, host, host),
 		},
-		"config_template": map[string]interface{}{
-			"server": "SERVER_ADDRESS:7000",
-			"token":  "YOUR_TOKEN",
-			"client": map[string]interface{}{
-				"name": "my-client",
-			},
-			"tunnels": []map[string]interface{}{
-				{
-					"name":        "web",
-					"local_port":  8080,
-					"remote_port": 8080,
-				},
-			},
+		"server_info": map[string]interface{}{
+			"addr": fmt.Sprintf("%s:%d", serverAddr, serverPort),
+			"web":  host,
 		},
 	}
 
@@ -306,4 +321,125 @@ func (w *WebAPI) handleDownloadClient(rw http.ResponseWriter, r *http.Request) {
 
 	// 检查文件是否存在
 	http.ServeFile(rw, r, clientPath)
+}
+
+// handleGenerateConfig 生成客户端配置
+func (w *WebAPI) handleGenerateConfig(rw http.ResponseWriter, r *http.Request) {
+	// 获取参数
+	clientName := r.URL.Query().Get("name")
+	if clientName == "" {
+		clientName = "my-client"
+	}
+
+	// 获取服务器地址
+	serverAddr := w.server.config.Server.BindAddr
+	if serverAddr == "0.0.0.0" || serverAddr == "" {
+		// 尝试从请求中获取真实IP
+		serverAddr = r.Header.Get("X-Real-IP")
+		if serverAddr == "" {
+			serverAddr = r.Header.Get("X-Forwarded-For")
+		}
+		if serverAddr == "" {
+			serverAddr = r.Host
+			// 移除端口号
+			for i := len(serverAddr) - 1; i >= 0; i-- {
+				if serverAddr[i] == ':' {
+					serverAddr = serverAddr[:i]
+					break
+				}
+			}
+		}
+	}
+	serverPort := w.server.config.Server.BindPort
+
+	// 生成配置
+	config := map[string]interface{}{
+		"server": map[string]interface{}{
+			"addr":  fmt.Sprintf("%s:%d", serverAddr, serverPort),
+			"token": w.server.config.Auth.Token,
+		},
+		"client": map[string]interface{}{
+			"name":                clientName,
+			"reconnect_interval":  5,
+			"heartbeat_interval": 30,
+		},
+		"tunnels": []map[string]interface{}{
+			{
+				"name":        "web",
+				"local_addr":  "127.0.0.1",
+				"local_port":  8080,
+				"remote_port": 8000,
+			},
+		},
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(map[string]interface{}{
+		"success": true,
+		"data":    config,
+	})
+}
+
+// handleDownloadConfig 下载客户端配置文件
+func (w *WebAPI) handleDownloadConfig(rw http.ResponseWriter, r *http.Request) {
+	// 获取参数
+	clientName := r.URL.Query().Get("name")
+	if clientName == "" {
+		clientName = "my-client"
+	}
+
+	// 获取服务器地址
+	serverAddr := w.server.config.Server.BindAddr
+	if serverAddr == "0.0.0.0" || serverAddr == "" {
+		// 尝试从请求中获取真实IP
+		serverAddr = r.Header.Get("X-Real-IP")
+		if serverAddr == "" {
+			serverAddr = r.Header.Get("X-Forwarded-For")
+		}
+		if serverAddr == "" {
+			serverAddr = r.Host
+			// 移除端口号
+			for i := len(serverAddr) - 1; i >= 0; i-- {
+			if serverAddr[i] == ':' {
+					serverAddr = serverAddr[:i]
+					break
+				}
+			}
+		}
+	}
+	serverPort := w.server.config.Server.BindPort
+
+	// 生成YAML配置
+	yamlConfig := fmt.Sprintf(`# Tunnel 客户端配置
+# 由服务器自动生成
+
+server:
+  addr: "%s:%d"
+  token: "%s"
+
+client:
+  name: "%s"
+  reconnect_interval: 5
+  heartbeat_interval: 30
+
+tunnels:
+  - name: "web"
+    local_addr: "127.0.0.1"
+    local_port: 8080
+    remote_port: 8000
+  
+  # 添加更多隧道（可选）
+  # - name: "ssh"
+  #   local_addr: "127.0.0.1"
+  #   local_port: 22
+  #   remote_port: 2222
+`,
+		serverAddr, serverPort, w.server.config.Auth.Token, clientName)
+
+	// 设置响应头
+	rw.Header().Set("Content-Type", "application/x-yaml")
+	rw.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="client-config.yaml"`))
+	
+	// 写入配置
+	rw.Write([]byte(yamlConfig))
 }
