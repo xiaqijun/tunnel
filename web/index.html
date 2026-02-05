@@ -9,7 +9,15 @@
 <body>
     <div class="container">
         <header>
-            <h1>🚀 内网穿透服务器管理</h1>
+            <div class="header-left">
+                <h1>🚀 内网穿透服务器管理</h1>
+                <div class="version-info">
+                    <span id="serverVersion">v0.0.0</span>
+                    <button class="update-btn" id="checkUpdateBtn" onclick="checkServerUpdate()" title="检查更新">
+                        <span id="updateIcon">🔄</span> 检查更新
+                    </button>
+                </div>
+            </div>
             <div class="status-indicator">
                 <span class="status-dot" id="statusDot"></span>
                 <span id="statusText">连接中...</span>
@@ -47,6 +55,16 @@
                 </div>
             </div>
         </section>
+
+        <!-- 更新提示 -->
+        <div id="updateAlert" class="update-alert" style="display: none;">
+            <div class="alert-content">
+                <span class="alert-icon">🎉</span>
+                <span id="updateMessage">发现新版本！</span>
+                <button class="alert-btn" id="updateNowBtn" onclick="updateServerNow()">立即更新</button>
+                <button class="alert-close" onclick="closeUpdateAlert()">×</button>
+            </div>
+        </div>
 
         <!-- 快速安装 -->
         <section class="install-section">

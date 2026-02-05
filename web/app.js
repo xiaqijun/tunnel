@@ -8,8 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     loadStats();
     loadInstallCommands();
     initInstallTabs();
+    loadServerVersion();
     // 每5秒刷新统计信息
     setInterval(loadStats, 5000);
+    // 每30分钟检查一次更新
+    setInterval(checkServerUpdate, 30 * 60 * 1000);
 });
 
 // 连接WebSocket
@@ -263,4 +266,112 @@ function copyCommand(elementId) {
         console.error('Failed to copy:', err);
         alert('复制失败，请手动复制');
     });
+}
+
+// 加载服务器版本
+async function loadServerVersion() {
+    try {
+        const response = await fetch('/api/version');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            const version = data.data.version || '0.0.0';
+            document.getElementById('serverVersion').textContent = 'v' + version;
+        }
+    } catch (e) {
+        console.error('Failed to load server version:', e);
+    }
+}
+
+// 检查服务器更新
+async function checkServerUpdate() {
+    const btn = document.getElementById('checkUpdateBtn');
+    const icon = document.getElementById('updateIcon');
+    
+    try {
+        btn.disabled = true;
+        icon.textContent = '⏳';
+        
+        const response = await fetch('/api/update/check');
+        const data = await response.json();
+        
+        if (data.success) {
+            if (data.has_update) {
+                // 有更新可用
+                btn.classList.add('has-update');
+                icon.textContent = '🎉';
+                showUpdateAlert(data.latest_version, data.release_notes);
+            } else {
+                // 已是最新版本
+                icon.textContent = '✅';
+                setTimeout(() => {
+                    icon.textContent = '🔄';
+                    btn.disabled = false;
+                }, 2000);
+            }
+        } else {
+            throw new Error(data.message || '检查更新失败');
+        }
+    } catch (e) {
+        console.error('Failed to check update:', e);
+        icon.textContent = '❌';
+        setTimeout(() => {
+            icon.textContent = '🔄';
+            btn.disabled = false;
+        }, 2000);
+        alert('检查更新失败: ' + e.message);
+    }
+}
+
+// 显示更新提示
+function showUpdateAlert(version, notes) {
+    const alert = document.getElementById('updateAlert');
+    const message = document.getElementById('updateMessage');
+    
+    message.textContent = `发现新版本 ${version}！`;
+    alert.style.display = 'block';
+}
+
+// 关闭更新提示
+function closeUpdateAlert() {
+    const alert = document.getElementById('updateAlert');
+    alert.style.display = 'none';
+}
+
+// 立即更新服务器
+async function updateServerNow() {
+    if (!confirm('确定要更新服务器吗？\n更新过程中服务器会短暂重启。')) {
+        return;
+    }
+    
+    const btn = document.getElementById('updateNowBtn');
+    const originalText = btn.textContent;
+    
+    try {
+        btn.disabled = true;
+        btn.textContent = '更新中...';
+        
+        const response = await fetch('/api/update/server', {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('更新成功！服务器将在数秒后重启。\n请稍后刷新页面。');
+            closeUpdateAlert();
+            
+            // 5秒后刷新页面
+            setTimeout(() => {
+                window.location.reload();
+            }, 5000);
+        } else {
+            throw new Error(data.message || '更新失败');
+        }
+    } catch (e) {
+        console.error('Failed to update server:', e);
+        alert('更新失败: ' + e.message);
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 }

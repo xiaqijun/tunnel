@@ -42,9 +42,139 @@ header {
     box-shadow: var(--shadow);
 }
 
+header .header-left {
+    flex: 1;
+}
+
 header h1 {
     font-size: 28px;
     font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.version-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.version-info span {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.update-btn {
+    background: rgba(255, 255, 255, 0.95);
+    color: #667eea;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.update-btn:hover {
+    background: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.update-btn:active {
+    transform: translateY(0);
+}
+
+.update-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.update-btn.has-update {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    animation: pulse-update 2s infinite;
+}
+
+@keyframes pulse-update {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* 更新提示框 */
+.update-alert {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.alert-icon {
+    font-size: 24px;
+}
+
+.alert-content span {
+    flex: 1;
+    font-size: 15px;
+}
+
+.alert-btn {
+    background: rgba(255, 255, 255, 0.95);
+    color: #667eea;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.alert-btn:hover {
+    background: white;
+    transform: scale(1.05);
+}
+
+.alert-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0 8px;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+}
+
+.alert-close:hover {
+    opacity: 1;
 }
 
 .status-indicator {

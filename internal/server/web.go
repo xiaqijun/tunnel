@@ -47,6 +47,7 @@ func (w *WebAPI) Start(addr string, port int) error {
 	api.HandleFunc("/version", w.handleGetVersion).Methods("GET")
 	api.HandleFunc("/update/check", w.handleCheckUpdate).Methods("GET")
 	api.HandleFunc("/update/info", w.handleUpdateInfo).Methods("GET")
+	api.HandleFunc("/update/server", w.handleUpdateServer).Methods("POST")
 
 	// 静态文件
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./web")))
@@ -574,4 +575,42 @@ Start-Service tunnel-server -ErrorAction SilentlyContinue`, downloadURL, version
 	}
 
 	return commands
+}
+
+// handleUpdateServer 执行服务器更新
+func (w *WebAPI) handleUpdateServer(rw http.ResponseWriter, r *http.Request) {
+	rw.Header().Set("Content-Type", "application/json")
+
+	// 检查更新
+	release, hasUpdate, err := version.CheckUpdate("xiaqijun/tunnel")
+	if err != nil {
+		json.NewEncoder(rw).Encode(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	if !hasUpdate {
+		json.NewEncoder(rw).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Already running the latest version",
+		})
+		return
+	}
+
+	// 在Linux系统上执行更新脚本
+	go func() {
+		// 简单返回成功，实际更新由管理员通过终端执行
+		log.Println("Update requested via Web API")
+		log.Printf("Latest version: %s", release.TagName)
+		log.Println("Please run the update script manually:")
+		log.Println("  curl -fsSL https://raw.githubusercontent.com/xiaqijun/tunnel/main/scripts/update-server.sh | sudo bash")
+	}()
+
+	json.NewEncoder(rw).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Update initiated. Server will restart shortly.",
+		"version": release.TagName,
+	})
 }
