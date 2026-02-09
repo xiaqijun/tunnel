@@ -54,18 +54,13 @@ docker-compose up -d
 
 打开浏览器访问 `http://localhost:8080` 查看管理界面！
 
-## 📖 详细文档
+## 📖 文档
 
-| 文档 | 说明 |
-|------|------|
-| [📋 部署指南](docs/DEPLOY.md) | 生产环境部署（含Docker） |
-| [📘 客户端快速入门](docs/CLIENT-QUICK-START.md) | 客户端安装和使用 |
-| [📊 性能测试](docs/PERFORMANCE.md) | 性能优化和测试 |
-| [🔌 API 文档](docs/API.md) | RESTful API 接口 |
-| [🔄 更新指南](docs/UPDATE.md) | 自动更新使用文档 |
-| [🔒 安全指南](docs/SECURITY.md) | 安全策略和最佳实践 |
-| [🤝 贡献指南](docs/CONTRIBUTING.md) | 如何参与贡献 |
-| [📝 更新日志](docs/CHANGELOG.md) | 版本更新历史 |
+- [📋 部署指南](docs/DEPLOY.md) - 服务器/客户端安装和更新
+- [🔌 API 文档](docs/API.md) - RESTful API 接口
+- [📝 更新日志](docs/CHANGELOG.md) - 版本更新历史
+- [📚 项目结构](STRUCTURE.md) - 目录结构说明
+- [⚙️ 配置详解](configs/README.md) - 配置文件说明
 ## 🚀 Linux 服务器快速安装
 
 一条命令完成服务器部署（自动从 GitHub Release 获取最新版本）：
