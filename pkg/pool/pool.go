@@ -79,7 +79,6 @@ func (p *WorkerPool) Stop() {
 // ConnPool 连接池
 type ConnPool struct {
 	conns chan interface{}
-	mu    sync.Mutex
 }
 
 // NewConnPool 创建连接池

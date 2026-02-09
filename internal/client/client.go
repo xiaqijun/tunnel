@@ -373,7 +373,9 @@ func (c *Client) sendCloseProxy(connID string) {
 	c.mu.Unlock()
 	
 	if conn != nil {
-		conn.Write(msg.Encode())
+		if _, err := conn.Write(msg.Encode()); err != nil {
+			log.Printf("Failed to send heartbeat: %v", err)
+		}
 	}
 }
 

@@ -110,7 +110,10 @@ func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	
 	// 设置读取超时
-	conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+	if err := conn.SetReadDeadline(time.Now().Add(30 * time.Second)); err != nil {
+		log.Printf("Failed to set read deadline: %v", err)
+		return
+	}
 	
 	// 读取认证消息
 	buf := make([]byte, 4096)
@@ -166,7 +169,9 @@ func (s *Server) handleConnection(conn net.Conn) {
 	}
 	
 	// 清除读取超时
-	conn.SetReadDeadline(time.Time{})
+	if err := conn.SetReadDeadline(time.Time{}); err != nil {
+		log.Printf("Failed to clear read deadline: %v", err)
+	}
 	
 	// 处理客户端消息
 	s.handleClientMessages(client)
@@ -189,7 +194,9 @@ func (s *Server) sendAuthResponse(conn net.Conn, success bool, message, clientID
 		Payload: data,
 	}
 	
-	conn.Write(msg.Encode())
+	if _, err := conn.Write(msg.Encode()); err != nil {
+		log.Printf("Failed to write auth response: %v", err)
+	}
 }
 
 // startTunnel 启动隧道

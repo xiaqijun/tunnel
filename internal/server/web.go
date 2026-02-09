@@ -114,10 +114,12 @@ func (w *WebAPI) handleGetClients(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	rw.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(rw).Encode(map[string]interface{}{
+	if err := json.NewEncoder(rw).Encode(map[string]interface{}{
 		"success": true,
 		"data":    clientInfos,
-	})
+	}); err != nil {
+		log.Printf("Failed to encode response: %v", err)
+	}
 }
 
 // handleGetClient 获取单个客户端
@@ -131,10 +133,12 @@ func (w *WebAPI) handleGetClient(rw http.ResponseWriter, r *http.Request) {
 
 	if !exists {
 		rw.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(rw).Encode(map[string]interface{}{
+		if err := json.NewEncoder(rw).Encode(map[string]interface{}{
 			"success": false,
 			"message": "Client not found",
-		})
+		}); err != nil {
+			log.Printf("Failed to encode error response: %v", err)
+		}
 		return
 	}
 
@@ -164,10 +168,12 @@ func (w *WebAPI) handleGetClient(rw http.ResponseWriter, r *http.Request) {
 	client.stats.mu.RUnlock()
 
 	rw.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(rw).Encode(map[string]interface{}{
+	if err := json.NewEncoder(rw).Encode(map[string]interface{}{
 		"success": true,
 		"data":    info,
-	})
+	}); err != nil {
+		log.Printf("Failed to encode response: %v", err)
+	}
 }
 
 // handleGetStats 获取统计信息
@@ -463,10 +469,12 @@ tunnels:
 
 	// 设置响应头
 	rw.Header().Set("Content-Type", "application/x-yaml")
-	rw.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="client-config.yaml"`))
+	rw.Header().Set("Content-Disposition", `attachment; filename="client-config.yaml"`)
 
 	// 写入配置
-	rw.Write([]byte(yamlConfig))
+	if _, err := rw.Write([]byte(yamlConfig)); err != nil {
+		log.Printf("Failed to write config: %v", err)
+	}
 }
 
 // handleGetVersion 获取版本信息
