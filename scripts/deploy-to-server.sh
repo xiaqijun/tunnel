@@ -110,7 +110,7 @@ echo -e "${YELLOW}[1/8] 下载预编译二进制文件...${NC}"
 TMP_DIR=$(mktemp -d)
 cd $TMP_DIR
 
-DOWNLOAD_URL="https://github.com/$GITHUB_REPO/releases/download/$TAG/tunnel-$PLATFORM.tar.gz"
+DOWNLOAD_URL="https://github.com/$GITHUB_REPO/releases/download/$TAG/tunnel-$TAG-$PLATFORM.tar.gz"
 
 if command -v wget &> /dev/null; then
     wget -q --show-progress "$DOWNLOAD_URL" -O tunnel.tar.gz
@@ -134,6 +134,9 @@ echo -e "${YELLOW}[2/8] 解压文件...${NC}"
 tar -xzf tunnel.tar.gz
 echo -e "${GREEN}✓ 解压完成${NC}"
 
+# 进入解压后的目录
+cd $PLATFORM
+
 # 步骤 3: 停止旧服务（如果存在）
 echo ""
 echo -e "${YELLOW}[3/8] 检查并停止旧服务...${NC}"
@@ -144,17 +147,24 @@ else
     echo -e "${BLUE}  没有运行中的服务${NC}"
 fi
 
-# 步骤 4: 安装二进制文件
+# 步骤 4: 安装二进制文件和web文件
 echo ""
 echo -e "${YELLOW}[4/8] 安装二进制文件...${NC}"
 mkdir -p $INSTALL_DIR/bin
 mkdir -p $INSTALL_DIR/logs
 
-cp tunnel-server-$PLATFORM $INSTALL_DIR/bin/tunnel-server
-cp tunnel-client-$PLATFORM $INSTALL_DIR/bin/tunnel-client
+# 复制二进制文件
+cp tunnel-server $INSTALL_DIR/bin/tunnel-server
+cp tunnel-client $INSTALL_DIR/bin/tunnel-client
 
 chmod +x $INSTALL_DIR/bin/tunnel-server
 chmod +x $INSTALL_DIR/bin/tunnel-client
+
+# 复制web文件（用于Web管理界面）
+if [ -d "web" ]; then
+    cp -r web $INSTALL_DIR/
+    echo -e "${GREEN}✓ Web文件已安装${NC}"
+fi
 
 echo -e "${GREEN}✓ 二进制文件已安装${NC}"
 
@@ -163,8 +173,13 @@ echo ""
 echo -e "${YELLOW}[5/8] 配置服务器...${NC}"
 
 if [ ! -f "$INSTALL_DIR/config.yaml" ]; then
-    # 下载默认配置
-    wget -q https://raw.githubusercontent.com/$GITHUB_REPO/main/config.yaml -O $INSTALL_DIR/config.yaml
+    # 使用压缩包中的配置示例
+    if [ -f "config.example.yaml" ]; then
+        cp config.example.yaml $INSTALL_DIR/config.yaml
+    else
+        # 降级方案：从GitHub下载
+        wget -q https://raw.githubusercontent.com/$GITHUB_REPO/main/configs/config.example.yaml -O $INSTALL_DIR/config.yaml
+    fi
     
     # 生成随机 token
     RANDOM_TOKEN=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)

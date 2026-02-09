@@ -83,6 +83,9 @@ fi
 echo "📦 正在解压..."
 tar -xzf "$DOWNLOAD_FILE"
 
+# 进入解压后的目录
+cd linux-$ARCH
+
 # 停止服务
 if systemctl is-active --quiet "$SERVICE_NAME"; then
     echo "⏸️  停止服务..."
@@ -93,15 +96,29 @@ else
 fi
 
 # 备份旧版本
-if [ -f "$INSTALL_DIR/tunnel-server" ]; then
+if [ -f "$INSTALL_DIR/bin/tunnel-server" ]; then
     echo "💾 备份旧版本..."
-    mv "$INSTALL_DIR/tunnel-server" "$INSTALL_DIR/tunnel-server.backup.$(date +%Y%m%d%H%M%S)"
+    mv "$INSTALL_DIR/bin/tunnel-server" "$INSTALL_DIR/bin/tunnel-server.backup.$(date +%Y%m%d%H%M%S)"
+fi
+
+if [ -f "$INSTALL_DIR/bin/tunnel-client" ]; then
+    mv "$INSTALL_DIR/bin/tunnel-client" "$INSTALL_DIR/bin/tunnel-client.backup.$(date +%Y%m%d%H%M%S)"
 fi
 
 # 安装新版本
 echo "📦 安装新版本..."
-mv tunnel-server "$INSTALL_DIR/"
-chmod +x "$INSTALL_DIR/tunnel-server"
+mkdir -p "$INSTALL_DIR/bin"
+mv tunnel-server "$INSTALL_DIR/bin/"
+mv tunnel-client "$INSTALL_DIR/bin/"
+chmod +x "$INSTALL_DIR/bin/tunnel-server"
+chmod +x "$INSTALL_DIR/bin/tunnel-client"
+
+# 更新web文件（如果存在）
+if [ -d "web" ]; then
+    echo "🌐 更新 Web 文件..."
+    rm -rf "$INSTALL_DIR/web"
+    cp -r web "$INSTALL_DIR/"
+fi
 
 # 启动服务
 if [ "$SERVICE_WAS_RUNNING" = true ]; then
@@ -123,7 +140,7 @@ cd /
 rm -rf "$TMP_DIR"
 
 # 显示新版本
-NEW_VERSION=$($INSTALL_DIR/tunnel-server -version 2>&1 | grep -oP 'Tunnel \K[0-9.]+' || echo "unknown")
+NEW_VERSION=$($INSTALL_DIR/bin/tunnel-server -version 2>&1 | grep -oP 'Tunnel \K[0-9.]+' || echo "unknown")
 echo ""
 echo "================================"
 echo "✅ 更新完成！"

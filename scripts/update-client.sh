@@ -75,6 +75,9 @@ fi
 echo "📦 正在解压..."
 tar -xzf "$DOWNLOAD_FILE"
 
+# 进入解压后的目录
+cd linux-$ARCH
+
 # 检查客户端是否在运行
 if pgrep -x "tunnel-client" > /dev/null; then
     echo "⏸️  检测到客户端正在运行，需要手动停止后再运行此脚本"
@@ -91,7 +94,7 @@ fi
 
 # 安装新版本
 echo "📦 安装新版本..."
-mv tunnel-client "$INSTALL_DIR/"
+cp tunnel-client "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/tunnel-client"
 
 # 清理临时文件
