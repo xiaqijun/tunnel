@@ -8,7 +8,7 @@ import (
 	"net"
 	"sync"
 	"time"
-	
+
 	"github.com/tunnel/pkg/config"
 	"github.com/tunnel/pkg/pool"
 	"github.com/tunnel/pkg/protocol"
@@ -16,14 +16,14 @@ import (
 
 // Client 客户端
 type Client struct {
-	config      *config.ClientConfig
-	serverConn  net.Conn
-	proxyConns  map[string]*ProxyConn
+	config       *config.ClientConfig
+	serverConn   net.Conn
+	proxyConns   map[string]*ProxyConn
 	proxyConnsMu sync.RWMutex
-	bufferPool  *pool.BufferPool
-	workerPool  *pool.WorkerPool
-	running     bool
-	mu          sync.Mutex
+	bufferPool   *pool.BufferPool
+	workerPool   *pool.WorkerPool
+	running      bool
+	mu           sync.Mutex
 }
 
 // ProxyConn 代理连接
@@ -64,17 +64,17 @@ func (c *Client) connect() error {
 	if err != nil {
 		return fmt.Errorf("dial error: %v", err)
 	}
-	
+
 	c.mu.Lock()
 	c.serverConn = conn
 	c.mu.Unlock()
-	
+
 	defer func() {
 		conn.Close()
 		c.mu.Lock()
 		c.serverConn = nil
 		c.mu.Unlock()
-		
+
 		// 关闭所有代理连接
 		c.proxyConnsMu.Lock()
 		for _, proxyConn := range c.proxyConns {
@@ -85,17 +85,17 @@ func (c *Client) connect() error {
 		c.proxyConns = make(map[string]*ProxyConn)
 		c.proxyConnsMu.Unlock()
 	}()
-	
+
 	log.Printf("Connected to server: %s", c.config.Server.Addr)
-	
+
 	// 发送认证请求
 	if err := c.authenticate(); err != nil {
 		return fmt.Errorf("authentication failed: %v", err)
 	}
-	
+
 	// 启动心跳
 	go c.heartbeat()
-	
+
 	// 处理服务器消息
 	return c.handleServerMessages()
 }
@@ -110,48 +110,48 @@ func (c *Client) authenticate() error {
 			RemotePort: t.RemotePort,
 		})
 	}
-	
+
 	authReq := protocol.AuthRequest{
 		Token:      c.config.Server.Token,
 		ClientName: c.config.Client.Name,
 		Tunnels:    tunnels,
 	}
-	
+
 	data, err := json.Marshal(authReq)
 	if err != nil {
 		return err
 	}
-	
+
 	msg := &protocol.Message{
 		Type:    protocol.MsgTypeAuth,
 		Payload: data,
 	}
-	
+
 	if _, err := c.serverConn.Write(msg.Encode()); err != nil {
 		return err
 	}
-	
+
 	// 读取响应
 	buf := make([]byte, 4096)
 	n, err := c.serverConn.Read(buf)
 	if err != nil {
 		return err
 	}
-	
+
 	respMsg, err := protocol.DecodeMessage(buf[:n])
 	if err != nil || respMsg == nil {
 		return fmt.Errorf("invalid response")
 	}
-	
+
 	var authResp protocol.AuthResponse
 	if err := json.Unmarshal(respMsg.Payload, &authResp); err != nil {
 		return err
 	}
-	
+
 	if !authResp.Success {
 		return fmt.Errorf("authentication failed: %s", authResp.Message)
 	}
-	
+
 	log.Printf("Authentication successful (Client ID: %s)", authResp.ClientID)
 	return nil
 }
@@ -160,21 +160,21 @@ func (c *Client) authenticate() error {
 func (c *Client) heartbeat() {
 	ticker := time.NewTicker(time.Duration(c.config.Client.HeartbeatInterval) * time.Second)
 	defer ticker.Stop()
-	
+
 	for range ticker.C {
 		c.mu.Lock()
 		conn := c.serverConn
 		c.mu.Unlock()
-		
+
 		if conn == nil {
 			break
 		}
-		
+
 		msg := &protocol.Message{
 			Type:    protocol.MsgTypeHeartbeat,
 			Payload: []byte{},
 		}
-		
+
 		if _, err := conn.Write(msg.Encode()); err != nil {
 			log.Printf("Heartbeat error: %v", err)
 			break
@@ -186,7 +186,7 @@ func (c *Client) heartbeat() {
 func (c *Client) handleServerMessages() error {
 	buf := make([]byte, 8192)
 	remaining := []byte{}
-	
+
 	for {
 		n, err := c.serverConn.Read(buf)
 		if err != nil {
@@ -195,28 +195,28 @@ func (c *Client) handleServerMessages() error {
 			}
 			return nil
 		}
-		
+
 		// 追加到剩余数据
 		data := append(remaining, buf[:n]...)
-		
+
 		for len(data) >= 5 {
 			msg, err := protocol.DecodeMessage(data)
 			if err != nil {
 				return fmt.Errorf("decode error: %v", err)
 			}
-			
+
 			if msg == nil {
 				// 需要更多数据
 				break
 			}
-			
+
 			// 处理消息
 			c.handleMessage(msg)
-			
+
 			// 移除已处理的数据
 			data = data[5+msg.Length:]
 		}
-		
+
 		remaining = data
 	}
 }
@@ -230,7 +230,7 @@ func (c *Client) handleMessage(msg *protocol.Message) {
 			log.Printf("Unmarshal proxy request error: %v", err)
 			return
 		}
-		
+
 		// 查找隧道配置
 		var tunnelConfig *config.TunnelConfig
 		for i := range c.config.Tunnels {
@@ -239,44 +239,44 @@ func (c *Client) handleMessage(msg *protocol.Message) {
 				break
 			}
 		}
-		
+
 		if tunnelConfig == nil {
 			log.Printf("Tunnel not found: %s", proxyReq.TunnelName)
 			return
 		}
-		
+
 		// 使用协程池处理
 		c.workerPool.Submit(func() {
 			c.handleNewProxy(proxyReq.ConnID, tunnelConfig)
 		})
-		
+
 	case protocol.MsgTypeData:
 		var dataPacket protocol.DataPacket
 		if err := json.Unmarshal(msg.Payload, &dataPacket); err != nil {
 			log.Printf("Unmarshal data packet error: %v", err)
 			return
 		}
-		
+
 		c.proxyConnsMu.RLock()
 		proxyConn, exists := c.proxyConns[dataPacket.ConnID]
 		c.proxyConnsMu.RUnlock()
-		
+
 		if !exists {
 			return
 		}
-		
+
 		// 写入本地连接
 		if _, err := proxyConn.LocalConn.Write(dataPacket.Data); err != nil {
 			log.Printf("Local conn write error: %v", err)
 			proxyConn.LocalConn.Close()
 		}
-		
+
 	case protocol.MsgTypeCloseProxy:
 		var proxyReq protocol.ProxyRequest
 		if err := json.Unmarshal(msg.Payload, &proxyReq); err != nil {
 			return
 		}
-		
+
 		c.proxyConnsMu.Lock()
 		if proxyConn, exists := c.proxyConns[proxyReq.ConnID]; exists {
 			if proxyConn.LocalConn != nil {
@@ -298,18 +298,18 @@ func (c *Client) handleNewProxy(connID string, tunnelConfig *config.TunnelConfig
 		c.sendCloseProxy(connID)
 		return
 	}
-	
+
 	proxyConn := &ProxyConn{
 		ID:        connID,
 		LocalConn: localConn,
 		Tunnel:    tunnelConfig,
 		CreatedAt: time.Now(),
 	}
-	
+
 	c.proxyConnsMu.Lock()
 	c.proxyConns[connID] = proxyConn
 	c.proxyConnsMu.Unlock()
-	
+
 	defer func() {
 		localConn.Close()
 		c.proxyConnsMu.Lock()
@@ -317,11 +317,11 @@ func (c *Client) handleNewProxy(connID string, tunnelConfig *config.TunnelConfig
 		c.proxyConnsMu.Unlock()
 		c.sendCloseProxy(connID)
 	}()
-	
+
 	// 转发数据(从本地到服务器)
 	buf := c.bufferPool.Get()
 	defer c.bufferPool.Put(buf)
-	
+
 	for {
 		n, err := localConn.Read(buf)
 		if err != nil {
@@ -330,7 +330,7 @@ func (c *Client) handleNewProxy(connID string, tunnelConfig *config.TunnelConfig
 			}
 			break
 		}
-		
+
 		// 发送数据到服务器
 		dataPacket := protocol.DataPacket{
 			ConnID: connID,
@@ -341,15 +341,15 @@ func (c *Client) handleNewProxy(connID string, tunnelConfig *config.TunnelConfig
 			Type:    protocol.MsgTypeData,
 			Payload: data,
 		}
-		
+
 		c.mu.Lock()
 		conn := c.serverConn
 		c.mu.Unlock()
-		
+
 		if conn == nil {
 			break
 		}
-		
+
 		if _, err := conn.Write(msg.Encode()); err != nil {
 			log.Printf("Failed to send data: %v", err)
 			break
@@ -367,11 +367,11 @@ func (c *Client) sendCloseProxy(connID string) {
 		Type:    protocol.MsgTypeCloseProxy,
 		Payload: data,
 	}
-	
+
 	c.mu.Lock()
 	conn := c.serverConn
 	c.mu.Unlock()
-	
+
 	if conn != nil {
 		if _, err := conn.Write(msg.Encode()); err != nil {
 			log.Printf("Failed to send heartbeat: %v", err)
@@ -387,6 +387,6 @@ func (c *Client) Stop() {
 		c.serverConn.Close()
 	}
 	c.mu.Unlock()
-	
+
 	c.workerPool.Stop()
 }

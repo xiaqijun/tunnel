@@ -47,7 +47,7 @@ func NewWorkerPool(workers int) *WorkerPool {
 		tasks:   make(chan func(), workers*2),
 		workers: workers,
 	}
-	
+
 	pool.start()
 	return pool
 }

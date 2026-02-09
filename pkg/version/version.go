@@ -9,9 +9,17 @@ import (
 	"time"
 )
 
+// min returns the smaller of x or y
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
 // 版本信息
 const (
-	Version   = "1.0.2"
+	Version   = "1.0.3"
 	GitCommit = ""
 	BuildDate = ""
 )
@@ -68,7 +76,8 @@ func CheckUpdate(repo string) (*GitHubRelease, bool, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, false, fmt.Errorf("GitHub API returned status %d", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		return nil, false, fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -76,9 +85,14 @@ func CheckUpdate(repo string) (*GitHubRelease, bool, error) {
 		return nil, false, fmt.Errorf("failed to read response: %v", err)
 	}
 
+	// 检查响应是否为空或不是JSON
+	if len(body) == 0 {
+		return nil, false, fmt.Errorf("empty response from GitHub API")
+	}
+
 	var release GitHubRelease
 	if err := json.Unmarshal(body, &release); err != nil {
-		return nil, false, fmt.Errorf("failed to parse response: %v", err)
+		return nil, false, fmt.Errorf("failed to parse response (first 200 chars): %s, error: %v", string(body[:min(200, len(body))]), err)
 	}
 
 	// 比较版本（简单的字符串比较）
