@@ -21,6 +21,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-t
 ```
 
 **自动完成：**
+- ✅ 自动检测最新版本
 - ✅ 下载预编译的二进制文件
 - ✅ 安装到 /opt/tunnel
 - ✅ 配置防火墙（UFW/firewalld/iptables）
@@ -33,45 +34,55 @@ bash <(wget -qO- https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-t
 
 ---
 
-## 📦 方式二：从源码编译部署
+## 📦 方式二：手动部署
 
-适合需要自定义编译或开发环境。
+如果需要自定义配置或无法使用一键脚本，可以手动部署。
 
-### 步骤 1：上传项目到服务器
+### 步骤 1：下载最新版本
 
-将整个项目文件夹上传到服务器（可使用 scp、sftp、git clone 等方式）
+访问 GitHub Releases 页面下载预编译的二进制文件：
+https://github.com/xiaqijun/tunnel/releases/latest
 
-```bash
-# 方式 1：使用 scp 上传（在本地执行）
-scp -r e:\github\Tunnel root@your-server-ip:/root/
-
-# 方式 2：在服务器上 git clone
-ssh root@your-server-ip
-git clone https://github.com/your-repo/Tunnel.git
-cd Tunnel
-```
-
-### 步骤 2：执行部署脚本
+或使用命令行下载：
 
 ```bash
-cd Tunnel
-chmod +x deploy/*.sh
+# 检测系统架构
+ARCH=$(uname -m)
+case $ARCH in
+    x86_64) ARCH="amd64" ;;
+    aarch64|arm64) ARCH="arm64" ;;
+esac
 
-# 编译程序
-bash deploy/linux-deploy.sh
+# 获取最新版本号
+LATEST_VERSION=$(curl -s https://api.github.com/repos/xiaqijun/tunnel/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+
+# 下载
+wget https://github.com/xiaqijun/tunnel/releases/download/${LATEST_VERSION}/tunnel-${LATEST_VERSION}-linux-${ARCH}.tar.gz
+
+# 解压
+tar -xzf tunnel-${LATEST_VERSION}-linux-${ARCH}.tar.gz
 ```
 
-### 步骤 3：修改配置文件
+### 步骤 2：安装文件
 
 ```bash
-# 编辑服务器配置
-nano config.yaml
+# 创建安装目录
+sudo mkdir -p /opt/tunnel/bin
+sudo mkdir -p /opt/tunnel/web
+
+# 移动二进制文件
+sudo mv tunnel-server /opt/tunnel/bin/
+sudo chmod +x /opt/tunnel/bin/tunnel-server
+
+# 如果压缩包包含web文件，也移动过去
+# sudo mv web/* /opt/tunnel/web/
 ```
 
-**重要：** 必须修改以下配置：
-- `auth.token`: 改为您自己的强密码（至少 20 位随机字符）
+### 步骤 3：创建配置文件
 
-```yaml
+```bash
+# 创建配置文件
+sudo tee /opt/tunnel/config.yaml > /dev/null << 'EOF'
 server:
   bind_addr: "0.0.0.0"
   bind_port: 7000
@@ -89,6 +100,15 @@ performance:
   read_buffer_size: 8192
   write_buffer_size: 8192
   worker_pool_size: 500
+EOF
+
+# 生成随机Token
+RANDOM_TOKEN=$(openssl rand -hex 16)
+sudo sed -i "s/YOUR-SECRET-TOKEN-HERE-CHANGE-ME/$RANDOM_TOKEN/g" /opt/tunnel/config.yaml
+
+echo "✅ 配置文件已创建"
+echo "📝 Token: $RANDOM_TOKEN"
+echo "⚠️  请记录此Token，客户端连接时需要使用"
 ```
 
 ### 步骤 4：配置防火墙
@@ -331,26 +351,6 @@ curl -fsSL https://raw.githubusercontent.com/xiaqijun/tunnel/main/scripts/update
 - ✅ 停止服务
 - ✅ 更新程序
 - ✅ 重启服务
-
-### 手动更新（从源码）
-
-```bash
-# 停止服务
-sudo systemctl stop tunnel-server
-
-# 拉取最新代码或上传新文件
-git pull  # 或重新上传
-
-# 重新编译
-bash deploy/linux-deploy.sh
-
-# 复制二进制文件（如果使用了 /opt/tunnel）
-sudo cp bin/tunnel-server /opt/tunnel/bin/
-sudo chmod +x /opt/tunnel/bin/tunnel-server
-
-# 重启服务
-sudo systemctl start tunnel-server
-```
 
 ## 🗑️ 卸载服务
 

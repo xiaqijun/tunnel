@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -314,17 +315,36 @@ func (w *WebAPI) handleGetInstallCommand(rw http.ResponseWriter, r *http.Request
 func (w *WebAPI) handleDownloadClient(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	osType := vars["os"]
-	_ = vars["arch"] // 目前仅使用 os 参数，arch 保留给未来使用
+	arch := vars["arch"]
 
 	// 构建客户端文件路径
 	var clientPath string
+	var fileName string
 	if osType == "windows" {
 		clientPath = "./bin/tunnel-client.exe"
+		fileName = "tunnel-client.exe"
 	} else {
 		clientPath = "./bin/tunnel-client"
+		fileName = "tunnel-client"
 	}
 
 	// 检查文件是否存在
+	fileInfo, err := os.Stat(clientPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			http.Error(rw, fmt.Sprintf("Client binary not found for %s/%s", osType, arch), http.StatusNotFound)
+		} else {
+			http.Error(rw, "Internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// 设置响应头
+	rw.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+	rw.Header().Set("Content-Type", "application/octet-stream")
+	rw.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
+
+	// 发送文件
 	http.ServeFile(rw, r, clientPath)
 }
 
