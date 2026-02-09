@@ -33,7 +33,7 @@
 
 ```cmd
 # 双击运行
-start.bat
+scripts\start.bat
 ```
 
 ### Linux/Mac 快速启动
@@ -48,6 +48,7 @@ make run-client  # 终端 2
 ### Docker 启动
 
 ```bash
+cd docker
 docker-compose up -d
 ```
 
@@ -57,12 +58,14 @@ docker-compose up -d
 
 | 文档 | 说明 |
 |------|------|
-| [� 部署指南](DEPLOY.md) | 生产环境部署（含Docker） |
-| [📊 性能测试](PERFORMANCE.md) | 性能优化和测试 |
-| [🔌 API 文档](API.md) | RESTful API 接口 |
-| [🔄 更新指南](UPDATE.md) | 自动更新使用文档 |
-| [🔒 安全指南](SECURITY.md) | 安全策略和最佳实践 |
-| [🤝 贡献指南](CONTRIBUTING.md) | 如何参与贡献 |
+| [📋 部署指南](docs/DEPLOY.md) | 生产环境部署（含Docker） |
+| [📘 客户端快速入门](docs/CLIENT-QUICK-START.md) | 客户端安装和使用 |
+| [📊 性能测试](docs/PERFORMANCE.md) | 性能优化和测试 |
+| [🔌 API 文档](docs/API.md) | RESTful API 接口 |
+| [🔄 更新指南](docs/UPDATE.md) | 自动更新使用文档 |
+| [🔒 安全指南](docs/SECURITY.md) | 安全策略和最佳实践 |
+| [🤝 贡献指南](docs/CONTRIBUTING.md) | 如何参与贡献 |
+| [📝 更新日志](docs/CHANGELOG.md) | 版本更新历史 |
 ## 🚀 Linux 服务器快速安装
 
 一条命令完成服务器部署（自动从 GitHub Release 获取最新版本）：
@@ -111,7 +114,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/xiaqijun/tunnel/main/deploy-
 
 ```bash
 # Windows
-build.bat
+scripts\build.bat
 
 # Linux/Mac
 make build
@@ -143,6 +146,13 @@ bin\tunnel-client.exe -config client-config.yaml
 ```
 
 ## ⚙️ 配置说明
+
+> 📁 配置文件示例位于 [configs/](configs/) 目录，请复制到根目录并修改。
+> 
+> ```bash
+> cp configs/config.example.yaml config.yaml
+> cp configs/client-config.example.yaml client-config.yaml
+> ```
 
 ### 服务器配置 (config.yaml)
 
@@ -230,6 +240,9 @@ tunnels:
 ### 使用 Docker Compose
 
 ```bash
+# 进入 docker 目录
+cd docker
+
 # 启动所有服务
 docker-compose up -d
 

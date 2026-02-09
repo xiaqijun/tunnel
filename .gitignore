@@ -33,6 +33,8 @@ Thumbs.db
 # Logs
 *.log
 
-# Config (if contains sensitive data)
-# config.yaml
-# client-config.yaml
+# Config files (actual config, not examples)
+# Production config files should not be committed
+config.yaml
+client-config.yaml
+# Example configs are in configs/ directory
